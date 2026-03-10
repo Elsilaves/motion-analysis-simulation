@@ -35,5 +35,5 @@ Features
 4. LEDs indicate motion direction:
    - Blue LEDs → approaching
    - Red LEDs → receding
-5. A piezo buzzer generates bat-like clicks based on distance.
+5. Piezo buzzer simulates echolocation sound by generating clicks, where the pitch and click rate change with object distance.
 6. The LCD displays distance, velocity and motion state.
