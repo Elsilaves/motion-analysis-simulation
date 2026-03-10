@@ -7,9 +7,6 @@ This project demonstrates motion detection and basic velocity estimation
 using an ultrasonic distance sensor. The system measures distance changes 
 over time to estimate movement direction and speed.
 
-Future versions will integrate a Doppler radar sensor (HB100) 
-to demonstrate true Doppler-based velocity measurement.
-
 Features
 --------
 
