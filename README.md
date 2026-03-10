@@ -1,17 +1,17 @@
 # Motion Analysis Simulation
 
-This project demonstrates motion detection and basic velocity estimation 
-using an ultrasonic distance sensor. The system measures distance changes 
-over time to estimate movement direction and speed.
+This project is an embedded system demonstration that uses ultrasonic echolocation to detect motion and estimate velocity from distance changes, illustrating the fundamental principles behind Doppler-based motion sensing.
+
+The system measures distance changes over time using an ultrasonic sensor to estimate movement direction and basic velocity, providing both visual and audio feedback.
 
 Features
 --------
 
-- Ultrasonic distance measurement (HC-SR04)
-- Velocity estimation from distance change
-- Direction detection (approaching / receding)
+- Ultrasonic distance measurement using HC-SR04
+- Velocity estimation from distance changes
+- Motion direction detection (approaching / receding)
 - LED motion indicator
-- Audio feedback using a piezo with pitch and click rate change
+- Audio feedback using a piezo buzzer (pitch and click rate variation)
 - 16x2 LCD real-time telemetry display
 - Planned Doppler radar integration (HB100)
 
@@ -30,9 +30,9 @@ Features
 2. The system compares the current distance with the previous measurement.
 3. From the distance change and time difference, velocity is estimated.
 4. LEDs indicate motion direction:
-   - Blue LEDs → approaching
-   - Red LEDs → receding
-5. Piezo buzzer simulates echolocation sound by generating clicks, where the pitch and click rate change with object distance.
+   - Blue LEDs → approaching (visual analogy to blueshift)
+   - Red LEDs → receding (visual analogy to redshift)
+5. A piezo buzzer provides audio feedback by generating clicks, where the pitch and click rate change with object distance.
 6. The LCD displays distance, velocity and motion state.
 
 ## Theory
@@ -41,4 +41,10 @@ Echolocation is a sensing method in which a sound pulse is emitted and the refle
 
 The Doppler effect describes how the frequency of a wave changes when there is relative motion between the source and the observer. When an object moves toward the observer, the observed frequency increases, while it decreases when the object moves away.
 
-In this project, motion is detected by repeatedly measuring distance using ultrasonic echolocation and estimating velocity from the change in distance over time. This allows the system to determine whether an object is approaching or receding. While the current implementation estimates motion from distance measurements, the concept relates to Doppler-based motion sensing and can be extended using microwave Doppler radar sensors.
+This project demonstrates motion detection using ultrasonic distance measurements. The system repeatedly measures the distance to an object and estimates velocity from the change in distance over time. By analyzing whether the measured distance is increasing or decreasing, the system determines whether the object is approaching or moving away.
+
+Although the system does not directly measure Doppler frequency shifts, it illustrates the fundamental concept behind Doppler-based motion sensing: detecting motion by analyzing changes in reflected waves over time. In this implementation, motion is inferred from distance changes instead of frequency shifts, but the principle of determining movement direction remains similar.
+
+Visual and audio feedback (LED indicators and buzzer signals) are used to represent approaching and receding motion, helping demonstrate the concept in an intuitive way. The system can be extended in future versions with microwave Doppler radar sensors that measure velocity directly from frequency shifts.
+
+## Demo
