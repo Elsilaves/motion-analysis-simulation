@@ -13,7 +13,7 @@ Features
 - Velocity estimation from distance change
 - Direction detection (approaching / receding)
 - LED motion indicator
-- Bat-style audio feedback using a piezo buzzer
+- Audio feedback using a piezo with pitch and click rate change
 - 16x2 LCD real-time telemetry display
 - Planned Doppler radar integration (HB100)
 
