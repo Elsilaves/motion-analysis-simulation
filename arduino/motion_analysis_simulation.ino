@@ -34,6 +34,9 @@ unsigned long lastTime = 0;
 int stableApproachCount = 0;
 int stableRecedeCount = 0;
 
+/* Smoothed speed to reduce LED flicker */
+float filteredSpeed = 0.0;
+
 /* =====================================================
    DISTANCE MEASUREMENT
    -----------------------------------------------------
@@ -64,7 +67,7 @@ float readRawDistance() {
    Filtered distance reading
    ========================= */
 float measureDistanceFiltered() {
-  const int samples = 5;
+  const int samples = 4;
   float sum = 0;
   int validCount = 0;
 
@@ -74,18 +77,16 @@ float measureDistanceFiltered() {
       sum += d;
       validCount++;
     }
-    delay(10);
+    delay(8);
   }
 
-  if (validCount < 3) return -1;
+  if (validCount < 2) return -1;
 
   return sum / validCount;
 }
 
 /* =====================================================
-  return sum / validCount;
    LED CONTROL
-}
    -----------------------------------------------------
    Visualizes motion direction and intensity
    ===================================================== */
@@ -119,7 +120,7 @@ void showStopped() {
    LCD HELPER FUNCTION
    -----------------------------------------------------
    Prints a formatted floating point value with padding
- =====================================================*/
+   ===================================================== */
 
 void printPaddedFloat(float value, int decimals, int width) {
   char buffer[17];
@@ -176,7 +177,7 @@ void playRecedeBuzzer(float distance) {
   tone(buzzerPin, freq, clickDuration);
 }
 
-   /* =====================================================
+/* =====================================================
    SYSTEM INITIALIZATION
    ===================================================== */
 
@@ -234,8 +235,9 @@ void loop() {
 
     stableApproachCount = 0;
     stableRecedeCount = 0;
+    filteredSpeed = 0.0;
 
-    delay(100);
+    delay(80);
     return;
   }
 
@@ -246,32 +248,32 @@ void loop() {
   }
 
   float dt = (now - lastTime) / 1000.0;
-  if (dt < 0.12) return;
+  if (dt < 0.07) return;
 
   float delta = distance - lastDistance;
 
-
-  if (abs(delta) > 20) {
+  if (abs(delta) > 30) {
     lastDistance = distance;
     lastTime = now;
     return;
   }
 
-  if (abs(delta) < 1.0) {
+  if (abs(delta) < 1.2) {
     delta = 0;
   }
 
   float speed = delta / dt;      // cm/s
-  float speedMs = speed / 100.0; // m/s
+  filteredSpeed = 0.55 * filteredSpeed + 0.45 * speed;
+  float speedMs = filteredSpeed / 100.0; // m/s
 
   String state = "STOP";
   int level = 0;
 
-  if (speed < -3) {
+  if (filteredSpeed < -4) {
     stableApproachCount++;
     stableRecedeCount = 0;
   }
-  else if (speed > 3) {
+  else if (filteredSpeed > 4) {
     stableRecedeCount++;
     stableApproachCount = 0;
   }
@@ -280,27 +282,27 @@ void loop() {
     stableRecedeCount = 0;
   }
 
-  if (stableApproachCount >= 1) {
+  if (stableApproachCount >= 2) {
     state = "APPROACH";
 
-    if (speed < -18)
-      level = 3;
-    else if (speed < -8)
+    if (abs(filteredSpeed) < 50)
+      level = 1;
+    else if (abs(filteredSpeed) < 100)
       level = 2;
     else
-      level = 1;
+      level = 3;
 
     showApproaching(level);
   }
-  else if (stableRecedeCount >= 1) {
+  else if (stableRecedeCount >= 2) {
     state = "RECEDE";
 
-    if (speed > 18)
-      level = 3;
-    else if (speed > 8)
+    if (abs(filteredSpeed) < 50)
+      level = 1;
+    else if (abs(filteredSpeed) < 100)
       level = 2;
     else
-      level = 1;
+      level = 3;
 
     showReceding(level);
   }
@@ -325,9 +327,11 @@ void loop() {
   Serial.print(" cm | Delta: ");
   Serial.print(delta);
   Serial.print(" cm | Speed: ");
-  Serial.print(speed);
+  Serial.print(filteredSpeed);
   Serial.print(" cm/s | State: ");
   Serial.print(state);
+  Serial.print(" | Level: ");
+  Serial.print(level);
   Serial.print(" | A:");
   Serial.print(stableApproachCount);
   Serial.print(" | R:");
@@ -357,5 +361,5 @@ void loop() {
   lastDistance = distance;
   lastTime = now;
 
-  delay(70);
+  delay(50);
 }
