@@ -22,16 +22,17 @@ int blue[3] = {5, 6, 7};
 
 LiquidCrystal lcd(12, 11, A0, A1, A2, A3);
 
-
 /* =====================================================
    GLOBAL STATE VARIABLES
    -----------------------------------------------------
    Used for velocity estimation between measurements
    ===================================================== */
 
-float lastDistance = 0.0;
+float lastDistance = -1.0;
 unsigned long lastTime = 0;
 
+int stableApproachCount = 0;
+int stableRecedeCount = 0;
 
 /* =====================================================
    DISTANCE MEASUREMENT
@@ -40,33 +41,56 @@ unsigned long lastTime = 0;
    Returns distance in centimeters.
    If no echo is detected, returns -1.
    ===================================================== */
-
-float measureDistance() {
-
+float readRawDistance() {
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(3);
 
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
-  long duration = pulseIn(echoPin, HIGH, 30000);
+  long duration = pulseIn(echoPin, HIGH, 25000);
 
-  if (duration == 0)
-    return -1;
+  if (duration == 0) return -1;
 
-  return duration * 0.0343 / 2.0;
+  float distance = duration * 0.0343 / 2.0;
+
+  if (distance < 2 || distance > 300) return -1;
+
+  return distance;
 }
 
+/* =========================
+   Filtered distance reading
+   ========================= */
+float measureDistanceFiltered() {
+  const int samples = 5;
+  float sum = 0;
+  int validCount = 0;
+
+  for (int i = 0; i < samples; i++) {
+    float d = readRawDistance();
+    if (d > 0) {
+      sum += d;
+      validCount++;
+    }
+    delay(10);
+  }
+
+  if (validCount < 3) return -1;
+
+  return sum / validCount;
+}
 
 /* =====================================================
+  return sum / validCount;
    LED CONTROL
+}
    -----------------------------------------------------
    Visualizes motion direction and intensity
    ===================================================== */
 
 void clearLeds() {
-
   for (int i = 0; i < 3; i++) {
     digitalWrite(red[i], LOW);
     digitalWrite(blue[i], LOW);
@@ -74,40 +98,34 @@ void clearLeds() {
 }
 
 void showApproaching(int level) {
-
   clearLeds();
-
-  for (int i = 0; i < level; i++)
+  for (int i = 0; i < level && i < 3; i++) {
     digitalWrite(blue[i], HIGH);
+  }
 }
 
 void showReceding(int level) {
-
   clearLeds();
-
-  for (int i = 0; i < level; i++)
+  for (int i = 0; i < level && i < 3; i++) {
     digitalWrite(red[i], HIGH);
+  }
 }
 
 void showStopped() {
-
   clearLeds();
 }
-
 
 /* =====================================================
    LCD HELPER FUNCTION
    -----------------------------------------------------
    Prints a formatted floating point value with padding
-   ===================================================== */
+ =====================================================*/
 
 void printPaddedFloat(float value, int decimals, int width) {
-
   char buffer[17];
   dtostrf(value, width, decimals, buffer);
   lcd.print(buffer);
 }
-
 
 /* =====================================================
    BUZZER CONTROL
@@ -116,40 +134,53 @@ void printPaddedFloat(float value, int decimals, int width) {
    Click frequency increases as the object gets closer.
    Inspired by bat echolocation behaviour.
    ===================================================== */
-
-void updateBuzzer(float distance) {
-
-  if (distance <= 0) {
+void playApproachBuzzer(float distance) {
+  if (distance <= 0 || distance > 100) {
     noTone(buzzerPin);
     return;
   }
 
   int freq;
-  int clickDuration = 12;
+  int clickDuration = 25;
 
-  if (distance > 150)
-    freq = 120;
-  else if (distance > 100)
-    freq = 200;
-  else if (distance > 60)
+  if (distance > 70)
     freq = 300;
-  else if (distance > 30)
-    freq = 420;
+  else if (distance > 40)
+    freq = 450;
+  else if (distance > 20)
+    freq = 650;
   else
-    freq = 550;
+    freq = 850;
 
   tone(buzzerPin, freq, clickDuration);
-
-  delay(5);
 }
 
+void playRecedeBuzzer(float distance) {
+  if (distance <= 0 || distance > 100) {
+    noTone(buzzerPin);
+    return;
+  }
 
-/* =====================================================
+  int freq;
+  int clickDuration = 25;
+
+  if (distance > 70)
+    freq = 180;
+  else if (distance > 40)
+    freq = 220;
+  else if (distance > 20)
+    freq = 260;
+  else
+    freq = 320;
+
+  tone(buzzerPin, freq, clickDuration);
+}
+
+   /* =====================================================
    SYSTEM INITIALIZATION
    ===================================================== */
 
 void setup() {
-
   Serial.begin(9600);
 
   pinMode(trigPin, OUTPUT);
@@ -157,17 +188,14 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
 
   for (int i = 0; i < 3; i++) {
-
     pinMode(red[i], OUTPUT);
     pinMode(blue[i], OUTPUT);
   }
 
   lcd.begin(16, 2);
-
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Doppler Demo");
-
   lcd.setCursor(0, 1);
   lcd.print("Starting...");
 
@@ -176,16 +204,11 @@ void setup() {
 
   delay(1000);
 
-  lastDistance = measureDistance();
-
-  if (lastDistance < 0)
-    lastDistance = 0;
-
+  lastDistance = measureDistanceFiltered();
   lastTime = millis();
 
   lcd.clear();
 }
-
 
 /* =====================================================
    MAIN CONTROL LOOP
@@ -197,89 +220,105 @@ void setup() {
    ===================================================== */
 
 void loop() {
-
-  float distance = measureDistance();
+  float distance = measureDistanceFiltered();
   unsigned long now = millis();
 
-
-  /* ----- No signal handling ----- */
-
   if (distance < 0) {
-
     clearLeds();
     noTone(buzzerPin);
 
     lcd.setCursor(0, 0);
     lcd.print("No signal       ");
-
     lcd.setCursor(0, 1);
     lcd.print("                ");
+
+    stableApproachCount = 0;
+    stableRecedeCount = 0;
 
     delay(100);
     return;
   }
 
-
-  /* ----- Velocity estimation ----- */
+  if (lastDistance < 0) {
+    lastDistance = distance;
+    lastTime = now;
+    return;
+  }
 
   float dt = (now - lastTime) / 1000.0;
+  if (dt < 0.12) return;
 
-  if (dt <= 0.05)
+  float delta = distance - lastDistance;
+
+
+  if (abs(delta) > 20) {
+    lastDistance = distance;
+    lastTime = now;
     return;
+  }
 
-  float delta = distance - lastDistance;   // cm
-  float speed = delta / dt;                // cm/s
-  float speedMs = speed / 100.0;           // m/s
+  if (abs(delta) < 1.0) {
+    delta = 0;
+  }
 
-
-  /* ----- Motion classification ----- */
+  float speed = delta / dt;      // cm/s
+  float speedMs = speed / 100.0; // m/s
 
   String state = "STOP";
   int level = 0;
 
-  if (speed < -1) {
+  if (speed < -3) {
+    stableApproachCount++;
+    stableRecedeCount = 0;
+  }
+  else if (speed > 3) {
+    stableRecedeCount++;
+    stableApproachCount = 0;
+  }
+  else {
+    stableApproachCount = 0;
+    stableRecedeCount = 0;
+  }
 
+  if (stableApproachCount >= 1) {
     state = "APPROACH";
 
-    if (speed < -15)
+    if (speed < -18)
       level = 3;
-    else if (speed < -6)
+    else if (speed < -8)
       level = 2;
     else
       level = 1;
 
     showApproaching(level);
   }
-
-  else if (speed > 1) {
-
+  else if (stableRecedeCount >= 1) {
     state = "RECEDE";
 
-    if (speed > 15)
+    if (speed > 18)
       level = 3;
-    else if (speed > 6)
+    else if (speed > 8)
       level = 2;
     else
       level = 1;
 
     showReceding(level);
   }
-
   else {
-
     state = "STOP";
     level = 0;
-
     showStopped();
   }
 
-
-  /* ----- Acoustic feedback ----- */
-
-  updateBuzzer(distance);
-
-
-  /* ----- Serial debug output ----- */
+  if (state == "APPROACH" && distance < 100) {
+    playApproachBuzzer(distance);
+  }
+  else if (state == "RECEDE" && distance < 100) {
+    playRecedeBuzzer(distance);
+  }
+  else {
+    noTone(buzzerPin);
+  }
 
   Serial.print("Distance: ");
   Serial.print(distance);
@@ -288,13 +327,13 @@ void loop() {
   Serial.print(" cm | Speed: ");
   Serial.print(speed);
   Serial.print(" cm/s | State: ");
-  Serial.println(state);
-
-
-  /* ----- LCD display update ----- */
+  Serial.print(state);
+  Serial.print(" | A:");
+  Serial.print(stableApproachCount);
+  Serial.print(" | R:");
+  Serial.println(stableRecedeCount);
 
   lcd.setCursor(0, 0);
-
   lcd.print("D:");
   printPaddedFloat(distance, 1, 5);
   lcd.print("cm ");
@@ -306,9 +345,7 @@ void loop() {
   else
     lcd.print("RCEDE ");
 
-
   lcd.setCursor(0, 1);
-
   lcd.print("v:");
   printPaddedFloat(speedMs, 2, 6);
   lcd.print("m/s ");
@@ -317,11 +354,8 @@ void loop() {
   lcd.print(level);
   lcd.print(" ");
 
-
-  /* ----- Update history ----- */
-
   lastDistance = distance;
   lastTime = now;
 
-  delay(120);
+  delay(70);
 }
