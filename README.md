@@ -57,7 +57,10 @@ Prototype Setup
 *Click on the image to watch the test video.*
 [![Prototype Setup](docs/Prototype_Setup.png)](https://youtu.be/KMK3tmB3b7Q)
 
+## Documentation
 
+- [User Guide](docs/user_guide.md)
+- [BOM](docs/BOM.md)
 
 ## License
 
