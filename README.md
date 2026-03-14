@@ -50,6 +50,8 @@ Visual and audio feedback (LED indicators and buzzer signals) are used to repres
 ## Demo
 
 An interactive simulation of the system is available on Tinkercad.
+
+*Click on the image to check the simulation.*
 [![Tinkercad Simulation](https://github.com/user-attachments/assets/20a807d7-6620-4360-8139-5ec82489d15b)](https://www.tinkercad.com/things/k68A6ySTx9Y-motion-analysis-simulation)
 
 Prototype Setup
