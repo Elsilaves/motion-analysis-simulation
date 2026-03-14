@@ -53,7 +53,11 @@ An interactive simulation of the system is available on Tinkercad.
 [![Tinkercad Simulation](https://github.com/user-attachments/assets/20a807d7-6620-4360-8139-5ec82489d15b)](https://www.tinkercad.com/things/k68A6ySTx9Y-motion-analysis-simulation)
 
 Prototype Setup
-![Prototype Setup](docs/Prototype_Setup.png)
+
+*Click on the image to watch the test video.*
+[![Prototype Setup](docs/Prototype_Setup.png)](https://youtu.be/KMK3tmB3b7Q)
+
+
 
 ## License
 
