@@ -1,4 +1,4 @@
-# Motion Analysis Simulation
+# Close-range Approach and Recede Estimation Node
 
 This project is an embedded system demonstration that uses ultrasonic echolocation to detect motion and estimate velocity from distance changes, illustrating the fundamental principles behind Doppler-based motion sensing.
 
