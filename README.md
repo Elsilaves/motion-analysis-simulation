@@ -53,6 +53,7 @@ An interactive simulation of the system is available on Tinkercad.
 [![Tinkercad Simulation](https://github.com/user-attachments/assets/20a807d7-6620-4360-8139-5ec82489d15b)](https://www.tinkercad.com/things/k68A6ySTx9Y-motion-analysis-simulation)
 
 
+
 ## License
 
 This project is released under the MIT License.
