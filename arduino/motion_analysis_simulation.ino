@@ -195,10 +195,22 @@ void setup() {
 
   lcd.begin(16, 2);
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Doppler Demo");
-  lcd.setCursor(0, 1);
-  lcd.print("Starting...");
+  lcd.setCursor(3, 0);
+  lcd.print("C.A.R.E.N.");
+  delay(2500);
+
+  String text = "                Close-range Approach and Recede Estimation Node ";
+
+  for (int i = 0; i < text.length(); i++) {
+  lcd.clear();
+  lcd.setCursor(2, 0);
+  lcd.print(text.substring(i, i + 16));
+  delay(250);
+  }
+
+  lcd.clear();
+  lcd.setCursor(2, 0);
+  lcd.print(" Starting ");
 
   clearLeds();
   noTone(buzzerPin);
